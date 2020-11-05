@@ -1,0 +1,4 @@
+PyYAML
+numpy
+cv2
+facenet_pytorch

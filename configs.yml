@@ -1,0 +1,12 @@
+device: 'cuda:0'
+
+train_df: "/root/datasets/siwm/train_labels_inverted.csv"  # path to train csv file
+val_df: "/root/datasets/siwm/val_labels_inverted.csv"  # path to validation csv file
+path_root: "/root/datasets/siwm"  # prefix path to your images
+
+batch_size: 32  # batch size for both validation and train dataloader
+num_workers_train: 0  # param for training dataloader
+num_workers_val: 0  # param for validation dataloader
+
+default_root_dir: "/root/lgsc/logs/siwm"  # path to save pytorch_lightning logs
+max_epochs: 25  # max number of epochs to train (if doesn't achieved early stopping)
