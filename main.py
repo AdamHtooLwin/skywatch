@@ -9,6 +9,12 @@ import yaml
 from models.resnet import ResNet18Classifier
 
 
+labels_map = {
+    0: 'Live',
+    1: 'Spoof'
+}
+
+
 class FaceDetector(object):
     """
     Face detector class
@@ -32,9 +38,15 @@ class FaceDetector(object):
                           (0, 0, 255),
                           thickness=2)
 
+            cropped_img = extract_face(frame, box)
+            cropped_img = cropped_img.unsqueeze(0)
+
+            output = self.model(cropped_img)
+            prediction = torch.argmax(output, dim=1).cpu().numpy()
+
             # Show probability
-            cv2.putText(frame, str(
-                prob), (box[2], box[3]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame,
+                        str(labels_map.get(prediction[0])), (box[2], box[3]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
             # Draw landmarks
             # cv2.circle(frame, tuple(ld[0]), 5, (0, 0, 255), -1)
