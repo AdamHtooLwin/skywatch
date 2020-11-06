@@ -7,6 +7,7 @@ import yaml
 import os
 
 from models.resnet import ResNet18Classifier
+from models.scan import SCAN
 
 
 labels_map = {
@@ -25,31 +26,28 @@ class FaceDetector(object):
             mtcnn_model: torch.nn.Module,
             video: str,
             clf_model: torch.nn.Module,
-            output_path: str,
-            configs: dict
+            output_path: str
     ):
         self.mtcnn = mtcnn_model
         self.video = video
         self.model = clf_model
         self.output_path = output_path
-        self.configs = configs
 
-    def _draw(self, frame, boxes, probs, landmarks, count):
+    def _draw(self, frame, boxes, probs, landmarks):
         """
         Draw landmarks and boxes for each face detected
         """
-        cv2.imwrite(configs['frames_folder'] + "original" + str(count) + ".png", frame)
-        for box, prob, ld in zip(boxes, probs, landmarks):
-            cropped_img = extract_face(frame, box, image_size=224,
-                                       save_path=configs['frames_folder'] + str(count) + ".png")
-            cropped_img = cropped_img.unsqueeze(0)
 
+        for box, prob, ld in zip(boxes, probs, landmarks):
             # Draw rectangle on frame
             cv2.rectangle(frame,
                           (box[0], box[1]),
                           (box[2], box[3]),
                           (0, 0, 255),
                           thickness=2)
+
+            cropped_img = extract_face(frame, box)
+            cropped_img = cropped_img.unsqueeze(0)
 
             output = self.model(cropped_img)
             prediction = torch.argmax(output, dim=1).cpu().numpy()
@@ -85,7 +83,6 @@ class FaceDetector(object):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         out = cv2.VideoWriter(self.output_path, fourcc, fps, (frame_width, frame_height))
 
-        count = 1
         while cap.isOpened():
             ret, frame = cap.read()
 
@@ -95,14 +92,13 @@ class FaceDetector(object):
 
                 # only draw if a face is detected
                 if boxes is not None:
-                    frame = self._draw(frame, boxes, probs, landmarks, count)
+                    frame = self._draw(frame, boxes, probs, landmarks)
 
                     # Write the frame into the file 'output.avi'
                 out.write(frame)
 
                 # # Show the frame
                 # cv2.imshow('Face Detection', frame)
-                count += 1
             else:
                 break
 
@@ -130,22 +126,21 @@ if __name__ == "__main__":
     with open(args.configs, 'r') as stream:
         configs = yaml.safe_load(stream)
 
-    # create frames folder
-    if not os.path.isdir(configs['frames_folder']):
-        os.makedirs(configs['frames_folder'])
-
     device = configs['device'] if torch.cuda.is_available() else None
 
     print("Starting...")
     start = time.time()
 
     # Run the app
-    mtcnn = MTCNN(image_size=224, post_process=False, device=device)
-    model = ResNet18Classifier()
-    model.load_state_dict(torch.load(configs['weights']))
+    mtcnn = MTCNN(device=device)
+    model = SCAN()
+
+    checkpoint = torch.load(configs['weights'])
+
+    model.load_state_dict(checkpoint['state_dict'])
     model.eval()
 
-    fcd = FaceDetector(mtcnn, args.video, model, args.output_file, configs)
+    fcd = FaceDetector(mtcnn, args.video, model, args.output_file)
     fcd.run()
     end = time.time()
     elapsed = end - start
