@@ -68,6 +68,8 @@ class FaceDetector(object):
 
             # Show probability
             cv2.putText(frame,
+                        "FDet: " + str(prob), (box[2], int(box[3] - 30.0)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame,
                         str(labels_map.get(prediction[0])), (box[2], box[3]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
             # Draw landmarks
@@ -76,6 +78,51 @@ class FaceDetector(object):
             # cv2.circle(frame, tuple(ld[2]), 5, (0, 0, 255), -1)
             # cv2.circle(frame, tuple(ld[3]), 5, (0, 0, 255), -1)
             # cv2.circle(frame, tuple(ld[4]), 5, (0, 0, 255), -1)
+
+        return frame
+
+    def draw_one(self, frame, box, prob, landmark, count):
+        """
+        Draw landmarks and boxes for only one face detected
+        """
+
+        im_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # cv2 imwrite no need for RGB conversion
+        cv2.imwrite(configs['frames_folder'] + "original" + str(count) + ".png", frame)
+
+        cropped_img = extract_face(im_rgb, box, image_size=224,
+                                   save_path=configs['frames_folder'] + str(count) + ".png")
+
+        # Draw rectangle on frame
+        cv2.rectangle(frame,
+                      (box[0], box[1]),
+                      (box[2], box[3]),
+                      (0, 0, 255),
+                      thickness=2)
+
+        transform = get_test_augmentations()
+
+        # (C, H, W) -> (H, W, C)
+        transformed_img = transform(image=np.array(cropped_img).transpose((1, 2, 0)))['image']
+        # add batch dim
+        transformed_img = transformed_img.unsqueeze(0)
+
+        output = self.model(transformed_img)
+        prediction = torch.argmax(output, dim=1).cpu().numpy()
+
+        # Show probability
+        cv2.putText(frame,
+                    "FDet: " + str(prob), (box[2], int(box[3] - 30.0)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame,
+                    str(labels_map.get(prediction[0])), (box[2], box[3]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+
+        # Draw landmarks
+        # cv2.circle(frame, tuple(ld[0]), 5, (0, 0, 255), -1)
+        # cv2.circle(frame, tuple(ld[1]), 5, (0, 0, 255), -1)
+        # cv2.circle(frame, tuple(ld[2]), 5, (0, 0, 255), -1)
+        # cv2.circle(frame, tuple(ld[3]), 5, (0, 0, 255), -1)
+        # cv2.circle(frame, tuple(ld[4]), 5, (0, 0, 255), -1)
 
         return frame
 
@@ -107,7 +154,7 @@ class FaceDetector(object):
 
                 # only draw if a face is detected
                 if boxes is not None:
-                    frame = self._draw(frame, boxes, probs, landmarks, count)
+                    frame = self.draw_one(frame, boxes[0], probs[0], landmarks[0], count)
 
                     # Write the frame into the file 'output.avi'
                 out.write(frame)
@@ -136,6 +183,7 @@ if __name__ == "__main__":
     parser.add_argument('video', type=str, help='Absolute path to input video.')
     parser.add_argument('-c', '--configs', type=str, required=True, help='Path to config file.')
     parser.add_argument('-o', '--output_file', type=str, default=default_output_path,  help='Path to output video file.')
+    parser.add_argument('-d', '--debug', type=str, default=True,  help='Dump processed frames.')
 
     args = parser.parse_args()
 
