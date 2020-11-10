@@ -1,5 +1,6 @@
 import cv2
 import torch
+import numpy as np
 from facenet_pytorch import MTCNN, extract_face
 import argparse
 import time
@@ -7,6 +8,7 @@ import yaml
 import os
 
 from models.resnet import ResNet18Classifier
+from dataset.siwm import get_test_augmentations
 
 
 labels_map = {
@@ -38,11 +40,14 @@ class FaceDetector(object):
         """
         Draw landmarks and boxes for each face detected
         """
+
+        im_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # cv2 imwrite no need for RGB conversion
         cv2.imwrite(configs['frames_folder'] + "original" + str(count) + ".png", frame)
         for box, prob, ld in zip(boxes, probs, landmarks):
-            cropped_img = extract_face(frame, box, image_size=224,
+            cropped_img = extract_face(im_rgb, box, image_size=224,
                                        save_path=configs['frames_folder'] + str(count) + ".png")
-            cropped_img = cropped_img.unsqueeze(0)
 
             # Draw rectangle on frame
             cv2.rectangle(frame,
@@ -51,7 +56,14 @@ class FaceDetector(object):
                           (0, 0, 255),
                           thickness=2)
 
-            output = self.model(cropped_img)
+            transform = get_test_augmentations()
+
+            # (C, H, W) -> (H, W, C)
+            transformed_img = transform(image=np.array(cropped_img).transpose((1, 2, 0)))['image']
+            # add batch dim
+            transformed_img = transformed_img.unsqueeze(0)
+
+            output = self.model(transformed_img)
             prediction = torch.argmax(output, dim=1).cpu().numpy()
 
             # Show probability
