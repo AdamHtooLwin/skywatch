@@ -2,3 +2,4 @@ PyYAML
 numpy
 cv2
 facenet_pytorch
+pytorch_lightning==0.9.0
