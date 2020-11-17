@@ -136,6 +136,8 @@ class FaceDetector(object):
         # Check if video opened successfully
         if not cap.isOpened():
             print("Error opening video stream or file")
+        else:
+            print("Opened video at ", self.video)
 
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -168,6 +170,13 @@ class FaceDetector(object):
 
         cap.release()
         out.release()
+
+        return {
+            'frame_width': frame_width,
+            'frame_height': frame_height,
+            'fps': fps,
+            'frame_count': count - 1
+        }
 
 
 if __name__ == "__main__":
@@ -204,11 +213,22 @@ if __name__ == "__main__":
     mtcnn = MTCNN(image_size=224, post_process=False, device=device)
     model = ResNet18Classifier()
     model.load_state_dict(torch.load(configs['weights']))
+    print("Model loaded from ", configs['weights'])
     model.eval()
 
     fcd = FaceDetector(mtcnn, args.video, model, args.output_file, configs)
-    fcd.run()
+    print("Running face detector...")
+    stats = fcd.run()
     end = time.time()
     elapsed = end - start
 
     print("Running time: %f ms" % (elapsed * 1000))
+
+    with open('output/log.txt', "w") as file:
+        file.write(f"time taken - {elapsed * 1000}\n")
+        file.write(f"video - {args.video}\n")
+        file.write(f"Weights - {configs['weights']}\n")
+        file.write(f"width - {stats['frame_width']}\n")
+        file.write(f"height - {stats['frame_height']}\n")
+        file.write(f"fps - {stats['fps']}\n")
+        file.write(f"frame count - {stats['frame_count']}\n")

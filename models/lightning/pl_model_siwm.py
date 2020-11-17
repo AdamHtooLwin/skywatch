@@ -28,5 +28,5 @@ class LightningModel(pl.LightningModule):
         return outs[-1]
 
     def classify(self, x):
-        _, clf_out = self.model(x)
-        return clf_out
+        outs, clf_out = self.model(x)
+        return outs[-1], clf_out

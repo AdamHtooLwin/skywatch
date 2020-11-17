@@ -1,5 +1,6 @@
 import cv2
 import torch
+from torchvision.utils import save_image
 import numpy as np
 from facenet_pytorch import MTCNN, extract_face
 import argparse
@@ -13,8 +14,8 @@ from models.lightning.pl_model_siwm import LightningModel
 
 
 labels_map = {
-    0: 'Live',
-    1: 'Spoof'
+    1: 'Live',
+    0: 'Spoof'
 }
 
 
@@ -29,13 +30,15 @@ class FaceDetector(object):
             video: str,
             clf_model: torch.nn.Module,
             output_path: str,
-            configs: dict
+            configs: dict,
+            device: str
     ):
         self.mtcnn = mtcnn_model
         self.video = video
         self.model = clf_model
         self.output_path = output_path
         self.configs = configs
+        self.device = device
 
     def _draw(self, frame, boxes, probs, landmarks, count):
         """
@@ -109,7 +112,12 @@ class FaceDetector(object):
         # add batch dim
         transformed_img = transformed_img.unsqueeze(0)
 
-        output = self.model.classify(transformed_img)
+        # transformed_img = transformed_img.to(device)
+        cue, output = self.model.classify(transformed_img)
+
+        # save cues
+        save_image(cue, configs['frames_folder'] + "cues/" + str(count) + ".png")
+
         prediction = torch.argmax(output, dim=1).cpu().numpy()
 
         # Show probability
@@ -176,6 +184,12 @@ class FaceDetector(object):
 
         cap.release()
         out.release()
+        return {
+            'frame_width': frame_width,
+            'frame_height': frame_height,
+            'fps': fps,
+            'frame_count': count
+        }
 
 
 if __name__ == "__main__":
@@ -203,6 +217,10 @@ if __name__ == "__main__":
     if not os.path.isdir(configs['frames_folder']):
         os.makedirs(configs['frames_folder'])
 
+    # create cues folder
+    if not os.path.isdir(configs['frames_folder'] + "cues"):
+        os.makedirs(configs['frames_folder'] + "cues")
+
     device = configs['device'] if torch.cuda.is_available() else None
 
     print("Starting...")
@@ -212,12 +230,22 @@ if __name__ == "__main__":
     mtcnn = MTCNN(image_size=224, post_process=False, device=device)
     model = LightningModel.load_from_checkpoint(configs['weights'])
     model.eval()
+    # model.to(device)
     print("Model loaded from ", configs['weights'])
 
-    fcd = FaceDetector(mtcnn, args.video, model, args.output_file, configs)
+    fcd = FaceDetector(mtcnn, args.video, model, args.output_file, configs, device)
     print("Running face detector...")
-    fcd.run()
+    stats = fcd.run()
     end = time.time()
     elapsed = end - start
 
     print("Running time: %f ms" % (elapsed * 1000))
+
+    with open('output/log.txt', "w") as file:
+        file.write(f"time taken - {elapsed * 1000}\n")
+        file.write(f"video - {args.video}\n")
+        file.write(f"Weights - {configs['weights']}\n")
+        file.write(f"width - {stats['frame_width']}\n")
+        file.write(f"height - {stats['frame_height']}\n")
+        file.write(f"fps - {stats['fps']}\n")
+        file.write(f"frame count - {stats['frame_count']}\n")
