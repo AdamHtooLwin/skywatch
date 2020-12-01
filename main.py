@@ -212,7 +212,7 @@ if __name__ == "__main__":
     # Run the app
     mtcnn = MTCNN(image_size=224, post_process=False, device=device)
     model = ResNet18Classifier()
-    model.load_state_dict(torch.load(configs['weights']))
+    model.load_state_dict(torch.load(configs['weights'], map_location=device))
     print("Model loaded from ", configs['weights'])
     model.eval()
 
