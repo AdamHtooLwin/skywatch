@@ -113,18 +113,19 @@ class FaceDetector(object):
         transformed_img = transformed_img.unsqueeze(0)
 
         # transformed_img = transformed_img.to(device)
-        cue, output = self.model.classify(transformed_img)
+        cue = self.model.infer(transformed_img)
 
         # save cues
         save_image(cue, configs['frames_folder'] + "cues/" + str(count) + ".png")
 
-        prediction = torch.argmax(output, dim=1).cpu().numpy()
+        score = cue.mean().cpu().item()
 
         # Show probability
         cv2.putText(frame,
                     "FDet: " + str(prob), (box[2], int(box[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
         cv2.putText(frame,
-                    str(labels_map.get(prediction[0])), (box[2], int(box[1] + 30.0)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                    "Spoof Score: " + str(score), (box[2], int(box[1] + 30.0)), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    (0, 0, 255), 2, cv2.LINE_AA)
 
         # Draw landmarks
         # cv2.circle(frame, tuple(ld[0]), 5, (0, 0, 255), -1)
