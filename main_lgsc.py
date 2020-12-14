@@ -122,9 +122,9 @@ class FaceDetector(object):
 
         # Show probability
         cv2.putText(frame,
-                    "FDet: " + "{:.3f}".format(prob), (box[2], int(box[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                    "FDet: " + "{:.3f}".format(prob), (box[0], int(box[3])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
         cv2.putText(frame,
-                    "Spoof Score: " + "{:.6f}".format(score), (box[2], int(box[1] + 30.0)), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    "Spoof Score: " + "{:.6f}".format(score), (box[0], int(box[3] + 30.0)), cv2.FONT_HERSHEY_SIMPLEX, 1,
                     (0, 0, 255), 2, cv2.LINE_AA)
 
         # Draw landmarks
