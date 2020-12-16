@@ -1,0 +1,13 @@
+device: 'cuda:0'
+#weights: "/root/skywatch/weights/vigilant/epoch_15.pth"  # path to weights file
+weights: "/home/adam/AIT/Research/Experiments/skywatch/weights/combined/epoch=10_v2.ckpt"  # path to weights file
+frames_folder: "/home/adam/AIT/Research/Experiments/skywatch/output/frames/" # path to saved cropped frames for testing
+
+mean:
+  r: 0
+  g: 0
+  b: 0
+std:
+  r: 1
+  g: 1
+  b: 1
