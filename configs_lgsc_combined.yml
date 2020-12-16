@@ -1,6 +1,6 @@
 device: 'cuda:2'
 #weights: "/root/skywatch/weights/vigilant/epoch_15.pth"  # path to weights file
-weights: "/root/skywatch/weights/combined/epoch7_v2.ckpt"  # path to weights file
+weights: "/root/skywatch/weights/combined/epoch10_v2.ckpt"  # path to weights file
 frames_folder: "/root/skywatch/output/frames/" # path to saved cropped frames for testing
 
 mean:
