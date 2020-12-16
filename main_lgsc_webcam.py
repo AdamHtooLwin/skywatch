@@ -91,10 +91,9 @@ class FaceDetector(object):
         im_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # cv2 imwrite no need for RGB conversion
-        cv2.imwrite(configs['frames_folder'] + "original" + str(count) + ".png", frame)
+        # cv2.imwrite(configs['frames_folder'] + "original" + str(count) + ".png", frame)
 
-        cropped_img = extract_face(im_rgb, box, image_size=224,
-                                   save_path=configs['frames_folder'] + str(count) + ".png")
+        cropped_img = extract_face(im_rgb, box, image_size=224)
 
         # Draw rectangle on frame
         cv2.rectangle(frame,
@@ -114,7 +113,7 @@ class FaceDetector(object):
         cue = self.model.infer(transformed_img)
 
         # save cues
-        save_image(cue, configs['frames_folder'] + "cues/" + str(count) + ".png")
+        # save_image(cue, configs['frames_folder'] + "cues/" + str(count) + ".png")
 
         score = cue.mean().cpu().item()
 
